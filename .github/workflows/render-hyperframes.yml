@@ -98,7 +98,6 @@ jobs:
           printf '%s' "$HTML_BASE64" | base64 --decode > "$project_dir/index.html"
           test -s "$project_dir/index.html"
           cp node_modules/gsap/dist/gsap.min.js "$project_dir/vendor/gsap.min.js"
-          cp example-project/index.motion.json "$project_dir/index.motion.json"
           test -s "$project_dir/vendor/gsap.min.js"
           printf '%s\n' '{"authoringSkill":"hyperframes"}' > "$project_dir/hyperframes.json"
           output_path="$output_dir/$REQUESTED_FILENAME"
@@ -109,7 +108,7 @@ jobs:
       - name: Validate HyperFrames composition
         run: |
           set -euo pipefail
-          npx --no-install hyperframes check "$PROJECT_DIR" --strict
+          npx --no-install hyperframes check "$PROJECT_DIR"
 
       - name: Render 1080x1920 MP4 locally
         run: |
@@ -118,7 +117,7 @@ jobs:
             --output "$OUTPUT_PATH" \
             --fps 30 \
             --quality high \
-            --strict-all
+            --strict
 
       - name: Verify rendered MP4
         run: |

@@ -17,6 +17,11 @@ For compatibility with earlier n8n exports, the dispatcher also accepts
 `html_b64` and `output_name` as aliases. Do not send both forms with different
 values; the renderer rejects conflicting inputs.
 
+Each dispatched composition is validated on its own HTML. The renderer does not
+attach the example project's motion-assertion sidecar to uploaded compositions,
+because those assertions contain selectors specific to the example. HyperFrames
+errors remain blocking; non-fatal lint/layout warnings are reported in the run.
+
 Jobs are serialized through the `renuvo-renders` concurrency group. Before upload, the workflow removes an existing asset with the same name, which makes retries idempotent and prevents rolling-release collisions.
 
 ## n8n credential
