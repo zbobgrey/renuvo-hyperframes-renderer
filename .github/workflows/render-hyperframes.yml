@@ -173,7 +173,7 @@ jobs:
 
       - name: Restore exact narration and timestamp cache
         id: narration-cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           path: |
             ${{ runner.temp }}/renuvo-hyperframes-project/media/narration
@@ -225,7 +225,7 @@ jobs:
 
       - name: Save newly generated narration and timestamps
         if: inputs.narration_mode == 'auto' && steps.narration-cache.outputs.cache-hit != 'true' && success()
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         with:
           path: |
             ${{ runner.temp }}/renuvo-hyperframes-project/media/narration
