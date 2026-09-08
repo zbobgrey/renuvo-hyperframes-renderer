@@ -1,0 +1,530 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=1080,height=1920" />
+    <title>Renuvo Day 1</title>
+    <script src="vendor/gsap.min.js"></script>
+    <style>
+      :root {
+        --ink: #0B0F19;
+        --ivory: #F7F6F2;
+        --slate: #1C2433;
+        --mist: #E6E8EC;
+        --graphite: #6B7280;
+        --ember: #D06B2E;
+      }
+
+      * { box-sizing: border-box; }
+      html, body {
+        width: 1080px;
+        height: 1920px;
+        margin: 0;
+        overflow: hidden;
+        background: var(--ink);
+      }
+      body {
+        color: var(--ivory);
+        font-family: Arial, Helvetica, sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      #renuvo-day-01 {
+        position: relative;
+        width: 1080px;
+        height: 1920px;
+        overflow: hidden;
+        background: var(--ink);
+      }
+      .clip {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+      }
+      .scene-frame {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        padding: 92px 78px 86px;
+      }
+      .scene-dark { background: var(--ink); color: var(--ivory); }
+      .scene-light { background: var(--ivory); color: var(--ink); }
+      .scene-slate { background: var(--slate); color: var(--ivory); }
+      .topline {
+        position: absolute;
+        z-index: 4;
+        top: 92px;
+        right: 78px;
+        left: 78px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        min-height: 42px;
+        font-size: 22px;
+        font-weight: 800;
+        letter-spacing: .16em;
+        text-transform: uppercase;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+      .mark {
+        display: block;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: var(--ember);
+        box-shadow: 0 0 0 9px rgba(208, 107, 46, .18);
+      }
+      .frame-index { color: var(--graphite); }
+      .scene-light .frame-index { color: var(--slate); }
+      .kicker {
+        position: relative;
+        z-index: 4;
+        margin: 0 0 38px;
+        color: var(--ember);
+        font-size: 24px;
+        font-weight: 800;
+        letter-spacing: .14em;
+        line-height: 1.2;
+        text-transform: uppercase;
+      }
+      .headline {
+        position: relative;
+        z-index: 4;
+        max-width: 900px;
+        margin: 0;
+        font-family: Georgia, 'Times New Roman', serif;
+        font-size: 138px;
+        font-weight: 400;
+        letter-spacing: -.055em;
+        line-height: .93;
+      }
+      .headline.compact { font-size: 112px; line-height: .96; }
+      .body-copy {
+        position: relative;
+        z-index: 4;
+        max-width: 830px;
+        margin: 42px 0 0;
+        font-size: 38px;
+        font-weight: 500;
+        letter-spacing: -.02em;
+        line-height: 1.26;
+      }
+      .ember { color: var(--ember); }
+      .bottom-rule {
+        position: absolute;
+        z-index: 4;
+        right: 78px;
+        bottom: 86px;
+        left: 78px;
+        height: 5px;
+        background: var(--ember);
+        transform-origin: left center;
+      }
+      .grid {
+        position: absolute;
+        inset: 0;
+        opacity: .32;
+        background-image:
+          linear-gradient(rgba(230, 232, 236, .08) 2px, transparent 2px),
+          linear-gradient(90deg, rgba(230, 232, 236, .08) 2px, transparent 2px);
+        background-size: 96px 96px;
+      }
+      .scene-light .grid {
+        opacity: .5;
+        background-image:
+          linear-gradient(rgba(28, 36, 51, .09) 2px, transparent 2px),
+          linear-gradient(90deg, rgba(28, 36, 51, .09) 2px, transparent 2px);
+      }
+      .orbital {
+        position: absolute;
+        width: 760px;
+        height: 760px;
+        border: 4px solid rgba(208, 107, 46, .6);
+        border-radius: 50%;
+      }
+      .orbital::before,
+      .orbital::after {
+        content: '';
+        position: absolute;
+        border-radius: 50%;
+        background: var(--ember);
+      }
+      .orbital::before { top: 62px; right: 72px; width: 34px; height: 34px; }
+      .orbital::after { bottom: 104px; left: 16px; width: 20px; height: 20px; }
+      .rail {
+        position: absolute;
+        height: 5px;
+        background: var(--ember);
+        transform-origin: left center;
+      }
+
+      #scene-01 .scene-frame { justify-content: center; padding-bottom: 220px; }
+      #scene-01 .headline { max-width: 910px; font-size: 150px; }
+      #scene-01-orbit { right: -330px; bottom: -110px; }
+      #scene-01-ghost {
+        position: absolute;
+        right: -64px;
+        bottom: 260px;
+        color: rgba(247, 246, 242, .12);
+        font: 800 280px/.8 Arial, sans-serif;
+        letter-spacing: -.08em;
+      }
+      #scene-01-rail { right: 78px; bottom: 172px; left: 78px; }
+
+      #scene-02 .scene-frame { padding-top: 160px; }
+      #scene-02 .headline { max-width: 880px; }
+      #scene-02-stack {
+        position: relative;
+        z-index: 4;
+        display: grid;
+        gap: 24px;
+        margin-top: 82px;
+      }
+      .offer-card {
+        min-height: 232px;
+        padding: 34px 40px;
+        border: 4px solid var(--ink);
+        background: var(--mist);
+        box-shadow: 18px 18px 0 var(--ember);
+      }
+      .offer-card strong {
+        display: block;
+        font-family: Georgia, 'Times New Roman', serif;
+        font-size: 72px;
+        font-weight: 400;
+        letter-spacing: -.04em;
+        line-height: 1;
+      }
+      .offer-card span {
+        display: block;
+        margin-top: 18px;
+        color: var(--slate);
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: .04em;
+        line-height: 1.25;
+        text-transform: uppercase;
+      }
+      #scene-02-rail { right: 78px; top: 120px; left: 78px; }
+
+      #scene-03 .scene-frame { justify-content: space-between; padding-top: 140px; }
+      #scene-03-copy { margin-top: 130px; }
+      #scene-03-loop {
+        position: relative;
+        z-index: 4;
+        height: 720px;
+        margin-bottom: 130px;
+      }
+      .loop-ring {
+        position: absolute;
+        top: 40px;
+        left: 72px;
+        width: 690px;
+        height: 690px;
+        border: 34px solid var(--mist);
+        border-right-color: var(--ember);
+        border-radius: 50%;
+      }
+      .loop-card {
+        position: absolute;
+        z-index: 5;
+        display: grid;
+        place-items: center;
+        width: 300px;
+        height: 174px;
+        border: 4px solid var(--ivory);
+        background: var(--ink);
+        color: var(--ivory);
+        font-size: 29px;
+        font-weight: 800;
+        letter-spacing: .09em;
+        text-align: center;
+        text-transform: uppercase;
+      }
+      #loop-card-a { top: 0; right: 0; }
+      #loop-card-b { right: 30px; bottom: 22px; background: var(--ember); color: var(--ink); }
+      #loop-card-c { bottom: 88px; left: 0; }
+
+      #scene-04 .scene-frame { padding-top: 148px; }
+      #scene-04 .headline { max-width: 880px; }
+      #scene-04-board {
+        position: relative;
+        z-index: 4;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 28px;
+        margin-top: 92px;
+      }
+      .status-card {
+        min-height: 310px;
+        padding: 34px;
+        border: 4px solid var(--mist);
+        background: var(--slate);
+      }
+      .status-card.wide { grid-column: 1 / -1; min-height: 390px; }
+      .status-label {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        color: var(--mist);
+        font-size: 23px;
+        font-weight: 800;
+        letter-spacing: .1em;
+        text-transform: uppercase;
+      }
+      .status-dot { width: 18px; height: 18px; border-radius: 50%; background: var(--ember); }
+      .status-value {
+        display: block;
+        margin-top: 70px;
+        font-family: Georgia, 'Times New Roman', serif;
+        font-size: 92px;
+        font-weight: 400;
+        letter-spacing: -.05em;
+        line-height: .95;
+      }
+      .benefit-lines { display: grid; gap: 26px; margin-top: 56px; }
+      .benefit-line { display: grid; grid-template-columns: 180px 1fr; align-items: center; gap: 26px; }
+      .benefit-line span { color: var(--mist); font-size: 24px; font-weight: 700; text-transform: uppercase; }
+      .benefit-line i { display: block; width: 100%; height: 24px; background: var(--graphite); transform-origin: left center; }
+      .benefit-line:nth-child(2) i { background: var(--ember); }
+
+      #scene-05 .scene-frame { padding-top: 150px; }
+      #scene-05 .headline { max-width: 890px; }
+      #scene-05-stage {
+        position: relative;
+        z-index: 4;
+        height: 720px;
+        margin-top: 118px;
+      }
+      .brand-panel {
+        position: absolute;
+        top: 0;
+        width: 430px;
+        height: 610px;
+        padding: 42px;
+        border: 4px solid var(--ink);
+      }
+      #brand-panel-a { left: 0; background: var(--slate); color: var(--ivory); }
+      #brand-panel-b { right: 0; background: var(--mist); color: var(--ink); }
+      .brand-panel .panel-mark { width: 92px; height: 92px; border-radius: 50%; background: var(--ember); }
+      .brand-panel strong {
+        display: block;
+        margin-top: 210px;
+        font-family: Georgia, 'Times New Roman', serif;
+        font-size: 62px;
+        font-weight: 400;
+        letter-spacing: -.04em;
+        line-height: .96;
+      }
+      .brand-panel span {
+        display: block;
+        margin-top: 30px;
+        font-size: 24px;
+        font-weight: 800;
+        letter-spacing: .1em;
+        text-transform: uppercase;
+      }
+      #scene-05-join {
+        position: absolute;
+        z-index: 6;
+        top: 292px;
+        left: 390px;
+        display: grid;
+        place-items: center;
+        width: 150px;
+        height: 150px;
+        border: 4px solid var(--ink);
+        border-radius: 50%;
+        background: var(--ember);
+        color: var(--ink);
+        font-size: 26px;
+        font-weight: 900;
+        letter-spacing: .06em;
+      }
+
+      #scene-06 .scene-frame { justify-content: center; padding-bottom: 230px; }
+      #scene-06 .headline { max-width: 920px; font-size: 148px; }
+      #scene-06-lockup {
+        position: relative;
+        z-index: 4;
+        margin-top: 76px;
+        padding-top: 40px;
+        border-top: 5px solid var(--ember);
+        font-size: 30px;
+        font-weight: 800;
+        letter-spacing: .16em;
+        text-transform: uppercase;
+      }
+      #scene-06-orbit { right: -250px; top: 260px; width: 620px; height: 620px; }
+      #scene-06-ghost {
+        position: absolute;
+        right: -150px;
+        bottom: 170px;
+        color: rgba(247, 246, 242, .1);
+        font: 800 330px/.8 Arial, sans-serif;
+        letter-spacing: -.08em;
+      }
+    </style>
+  </head>
+  <body>
+    <main
+      id="renuvo-day-01"
+      data-composition-id="renuvo-day-01"
+      data-start="0"
+      data-width="1080"
+      data-height="1920"
+      data-fps="30"
+      data-duration="37"
+    >
+      <section id="scene-01" class="clip scene-dark" data-start="0" data-duration="6" data-track-index="1">
+        <div class="scene-frame">
+          <div class="grid" data-layout-ignore></div>
+          <div id="scene-01-orbit" class="orbital" data-layout-ignore></div>
+          <div id="scene-01-ghost" data-layout-ignore>R</div>
+          <div class="topline" id="scene-01-topline"><span class="brand"><i class="mark"></i>Renuvo</span><span class="frame-index">01 / 06</span></div>
+          <p class="kicker" id="scene-01-kicker">A better return starts here</p>
+          <h1 class="headline" id="scene-01-headline">Your Brand. Built to return.</h1>
+          <div id="scene-01-rail" class="rail" data-layout-ignore></div>
+        </div>
+      </section>
+
+      <section id="scene-02" class="clip scene-light" data-start="6" data-duration="6" data-track-index="1">
+        <div class="scene-frame">
+          <div class="grid" data-layout-ignore></div>
+          <div id="scene-02-rail" class="rail" data-layout-ignore></div>
+          <div class="topline" id="scene-02-topline"><span class="brand"><i class="mark"></i>Renuvo</span><span class="frame-index">02 / 06</span></div>
+          <p class="kicker" id="scene-02-kicker">Flexible by design</p>
+          <h2 class="headline compact" id="scene-02-headline">Memberships, credits, and benefits—shaped around your business.</h2>
+          <div id="scene-02-stack">
+            <article class="offer-card"><strong>Memberships</strong><span>Plans that fit the way you serve</span></article>
+            <article class="offer-card"><strong>Credits</strong><span>Simple value customers understand</span></article>
+            <article class="offer-card"><strong>Benefits</strong><span>Reasons to choose you again</span></article>
+          </div>
+        </div>
+      </section>
+
+      <section id="scene-03" class="clip scene-dark" data-start="12" data-duration="6" data-track-index="1">
+        <div class="scene-frame">
+          <div class="grid" data-layout-ignore></div>
+          <div class="topline" id="scene-03-topline"><span class="brand"><i class="mark"></i>Renuvo</span><span class="frame-index">03 / 06</span></div>
+          <div id="scene-03-copy">
+            <p class="kicker">The return loop</p>
+            <h2 class="headline compact" id="scene-03-headline">Every visit becomes a reason to come back.</h2>
+          </div>
+          <div id="scene-03-loop">
+            <div id="scene-03-ring" class="loop-ring" data-layout-ignore></div>
+            <div id="loop-card-a" class="loop-card">Join</div>
+            <div id="loop-card-b" class="loop-card">Return</div>
+            <div id="loop-card-c" class="loop-card">Belong</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="scene-04" class="clip scene-slate" data-start="18" data-duration="6" data-track-index="1">
+        <div class="scene-frame">
+          <div class="grid" data-layout-ignore></div>
+          <div class="topline" id="scene-04-topline"><span class="brand"><i class="mark"></i>Renuvo</span><span class="frame-index">04 / 06</span></div>
+          <p class="kicker" id="scene-04-kicker">Clear at every touchpoint</p>
+          <h2 class="headline compact" id="scene-04-headline">Benefits stay clear. Teams stay ready.</h2>
+          <div id="scene-04-board">
+            <article class="status-card"><span class="status-label"><i class="status-dot"></i>Members</span><strong class="status-value">Ready</strong></article>
+            <article class="status-card"><span class="status-label"><i class="status-dot"></i>Visits</span><strong class="status-value">Visible</strong></article>
+            <article class="status-card wide">
+              <span class="status-label"><i class="status-dot"></i>Benefits</span>
+              <div class="benefit-lines">
+                <div class="benefit-line"><span>Active</span><i id="benefit-bar-a"></i></div>
+                <div class="benefit-line"><span>Ready</span><i id="benefit-bar-b"></i></div>
+                <div class="benefit-line"><span>Clear</span><i id="benefit-bar-c"></i></div>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section id="scene-05" class="clip scene-light" data-start="24" data-duration="6" data-track-index="1">
+        <div class="scene-frame">
+          <div class="grid" data-layout-ignore></div>
+          <div class="topline" id="scene-05-topline"><span class="brand"><i class="mark"></i>Renuvo</span><span class="frame-index">05 / 06</span></div>
+          <p class="kicker" id="scene-05-kicker">Yours in every detail</p>
+          <h2 class="headline compact" id="scene-05-headline">Built for your brand. Ready for the counter.</h2>
+          <div id="scene-05-stage">
+            <article id="brand-panel-a" class="brand-panel"><i class="panel-mark"></i><strong>Your business</strong><span>Your voice</span></article>
+            <article id="brand-panel-b" class="brand-panel"><i class="panel-mark"></i><strong>Your customer</strong><span>Your experience</span></article>
+            <div id="scene-05-join">R</div>
+          </div>
+          <div class="bottom-rule" id="scene-05-rule" data-layout-ignore></div>
+        </div>
+      </section>
+
+      <section id="scene-06" class="clip scene-dark" data-start="30" data-duration="7" data-track-index="1">
+        <div class="scene-frame">
+          <div class="grid" data-layout-ignore></div>
+          <div id="scene-06-orbit" class="orbital" data-layout-ignore></div>
+          <div id="scene-06-ghost" data-layout-ignore>R</div>
+          <div class="topline" id="scene-06-topline"><span class="brand"><i class="mark"></i>Renuvo</span><span class="frame-index">06 / 06</span></div>
+          <p class="kicker" id="scene-06-kicker">Renuvo</p>
+          <h2 class="headline" id="scene-06-headline">Your Brand. Built to return.</h2>
+          <p id="scene-06-lockup">Membership infrastructure for businesses that value the return.</p>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      const timeline = gsap.timeline({ paused: true });
+
+      timeline.addLabel('opening', 0);
+      timeline.fromTo('#scene-01-topline', { opacity: 0, x: -54 }, { opacity: 1, x: 0, duration: .55, ease: 'power3.out' }, .2);
+      timeline.fromTo('#scene-01-kicker', { opacity: 0, y: 44 }, { opacity: 1, y: 0, duration: .7, ease: 'expo.out' }, .5);
+      timeline.fromTo('#scene-01-headline', { opacity: 0, y: 88 }, { opacity: 1, y: 0, duration: 1, ease: 'power4.out' }, .72);
+      timeline.fromTo('#scene-01-rail', { scaleX: 0 }, { scaleX: 1, duration: 1.15, ease: 'power2.inOut' }, 1.05);
+      timeline.fromTo('#scene-01-orbit', { rotation: 0 }, { rotation: 92, duration: 5.45, ease: 'none' }, .25);
+
+      timeline.addLabel('offers', 6);
+      timeline.fromTo('#scene-02-topline', { opacity: 0, x: 56 }, { opacity: 1, x: 0, duration: .45, ease: 'power2.out' }, 6.2);
+      timeline.fromTo('#scene-02-kicker', { opacity: 0, y: -34 }, { opacity: 1, y: 0, duration: .42, ease: 'back.out(1.4)' }, 6.4);
+      timeline.fromTo('#scene-02-headline', { opacity: 0, x: -72 }, { opacity: 1, x: 0, duration: .72, ease: 'expo.out' }, 6.62);
+      timeline.fromTo('#scene-02-stack .offer-card', { opacity: 0, x: 110 }, { opacity: 1, x: 0, duration: .62, stagger: .14, ease: 'power4.out' }, 7.08);
+      timeline.fromTo('#scene-02-rail', { scaleX: 0 }, { scaleX: 1, duration: 4.9, ease: 'none' }, 6.35);
+
+      timeline.addLabel('loop', 12);
+      timeline.fromTo('#scene-03-topline', { opacity: 0, y: -36 }, { opacity: 1, y: 0, duration: .46, ease: 'power3.out' }, 12.2);
+      timeline.fromTo('#scene-03-headline', { opacity: 0, x: -86 }, { opacity: 1, x: 0, duration: .75, ease: 'expo.out' }, 12.48);
+      timeline.fromTo('#scene-03-ring', { opacity: 0, scale: .78, rotation: -24 }, { opacity: 1, scale: 1, rotation: 0, duration: 1.05, ease: 'back.out(1.2)' }, 12.9);
+      timeline.fromTo('#scene-03-loop .loop-card', { opacity: 0, scale: .7 }, { opacity: 1, scale: 1, duration: .52, stagger: .16, ease: 'power4.out' }, 13.25);
+      timeline.to('#scene-03-ring', { rotation: 82, duration: 3.8, ease: 'none' }, 14);
+
+      timeline.addLabel('operations', 18);
+      timeline.fromTo('#scene-04-topline', { opacity: 0, x: -42 }, { opacity: 1, x: 0, duration: .42, ease: 'power2.out' }, 18.2);
+      timeline.fromTo('#scene-04-kicker', { opacity: 0, y: 36 }, { opacity: 1, y: 0, duration: .5, ease: 'back.out(1.3)' }, 18.36);
+      timeline.fromTo('#scene-04-headline', { opacity: 0, y: 76 }, { opacity: 1, y: 0, duration: .78, ease: 'power4.out' }, 18.55);
+      timeline.fromTo('#scene-04-board .status-card', { opacity: 0, scale: .9 }, { opacity: 1, scale: 1, duration: .58, stagger: .13, ease: 'expo.out' }, 19.08);
+      timeline.fromTo('#benefit-bar-a', { scaleX: .14 }, { scaleX: .78, duration: 2.6, ease: 'power2.inOut' }, 19.85);
+      timeline.fromTo('#benefit-bar-b', { scaleX: .12 }, { scaleX: .94, duration: 3.1, ease: 'sine.inOut' }, 20.02);
+      timeline.fromTo('#benefit-bar-c', { scaleX: .1 }, { scaleX: .68, duration: 3.45, ease: 'power1.inOut' }, 20.18);
+
+      timeline.addLabel('brand-fit', 24);
+      timeline.fromTo('#scene-05-topline', { opacity: 0, y: -38 }, { opacity: 1, y: 0, duration: .45, ease: 'power3.out' }, 24.2);
+      timeline.fromTo('#scene-05-kicker', { opacity: 0, x: 44 }, { opacity: 1, x: 0, duration: .48, ease: 'back.out(1.35)' }, 24.4);
+      timeline.fromTo('#scene-05-headline', { opacity: 0, x: -82 }, { opacity: 1, x: 0, duration: .72, ease: 'expo.out' }, 24.58);
+      timeline.fromTo('#brand-panel-a', { opacity: 0, x: -120, rotation: -3 }, { opacity: 1, x: 0, rotation: 0, duration: .75, ease: 'power4.out' }, 25.05);
+      timeline.fromTo('#brand-panel-b', { opacity: 0, x: 120, rotation: 3 }, { opacity: 1, x: 0, rotation: 0, duration: .75, ease: 'power4.out' }, 25.2);
+      timeline.fromTo('#scene-05-join', { opacity: 0, scale: .4, rotation: -90 }, { opacity: 1, scale: 1, rotation: 0, duration: .7, ease: 'back.out(1.8)' }, 25.72);
+      timeline.fromTo('#scene-05-rule', { scaleX: 0 }, { scaleX: 1, duration: 3.45, ease: 'power2.inOut' }, 25.9);
+
+      timeline.addLabel('closing', 30);
+      timeline.fromTo('#scene-06-topline', { opacity: 0, x: 46 }, { opacity: 1, x: 0, duration: .52, ease: 'power3.out' }, 30.2);
+      timeline.fromTo('#scene-06-kicker', { opacity: 0, y: -38 }, { opacity: 1, y: 0, duration: .55, ease: 'back.out(1.35)' }, 30.45);
+      timeline.fromTo('#scene-06-headline', { opacity: 0, y: 92 }, { opacity: 1, y: 0, duration: 1.02, ease: 'expo.out' }, 30.68);
+      timeline.fromTo('#scene-06-lockup', { opacity: 0, scaleX: .72 }, { opacity: 1, scaleX: 1, duration: .78, ease: 'power4.out' }, 31.42);
+      timeline.fromTo('#scene-06-orbit', { rotation: 0 }, { rotation: 112, duration: 6.4, ease: 'none' }, 30.3);
+
+      window.__timelines['renuvo-day-01'] = timeline;
+    </script>
+  </body>
+</html>

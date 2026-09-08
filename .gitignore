@@ -1,0 +1,6 @@
+node_modules/
+example-project/vendor/
+renders/
+.hyperframes/
+snapshots/
+*.log

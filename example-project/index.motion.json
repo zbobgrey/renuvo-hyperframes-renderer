@@ -1,0 +1,19 @@
+{
+  "duration": 37,
+  "assertions": [
+    { "kind": "appearsBy", "selector": "#scene-01-headline", "bySec": 1.8 },
+    { "kind": "appearsBy", "selector": "#scene-02-headline", "bySec": 7.7 },
+    { "kind": "appearsBy", "selector": "#scene-03-headline", "bySec": 13.5 },
+    { "kind": "appearsBy", "selector": "#scene-04-headline", "bySec": 19.5 },
+    { "kind": "appearsBy", "selector": "#scene-05-headline", "bySec": 25.5 },
+    { "kind": "appearsBy", "selector": "#scene-06-headline", "bySec": 32 },
+    { "kind": "before", "a": "#scene-01-kicker", "b": "#scene-01-headline" },
+    { "kind": "staysInFrame", "selector": "#scene-01-headline" },
+    { "kind": "staysInFrame", "selector": "#scene-02-headline" },
+    { "kind": "staysInFrame", "selector": "#scene-03-headline" },
+    { "kind": "staysInFrame", "selector": "#scene-04-headline" },
+    { "kind": "staysInFrame", "selector": "#scene-05-headline" },
+    { "kind": "staysInFrame", "selector": "#scene-06-headline" },
+    { "kind": "keepsMoving", "withinSelector": "#renuvo-day-01", "maxStaticSec": 2 }
+  ]
+}

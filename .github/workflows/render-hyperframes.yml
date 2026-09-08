@@ -1,0 +1,137 @@
+name: Render HyperFrames MP4
+
+on:
+  workflow_dispatch:
+    inputs:
+      html_base64:
+        description: Base64-encoded standalone HyperFrames HTML
+        required: true
+        type: string
+      output_filename:
+        description: Validated MP4 asset filename
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: renuvo-renders
+  cancel-in-progress: false
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      HYPERFRAMES_RUN_ID: renuvo-${{ github.run_id }}-${{ github.run_attempt }}
+      RELEASE_TAG: renuvo-renders
+    steps:
+      - name: Check out renderer
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install pinned renderer dependencies
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts=false
+          installed_hyperframes="$(node -p "require('./node_modules/hyperframes/package.json').version")"
+          installed_gsap="$(node -p "require('./node_modules/gsap/package.json').version")"
+          test "$installed_hyperframes" = "0.8.30"
+          case "$installed_gsap" in
+            3.*) ;;
+            *) echo "Expected GSAP 3.x, got $installed_gsap" >&2; exit 1 ;;
+          esac
+
+      - name: Validate inputs and decode temporary project
+        env:
+          HTML_BASE64: ${{ inputs.html_base64 }}
+          REQUESTED_FILENAME: ${{ inputs.output_filename }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$REQUESTED_FILENAME" =~ ^renuvo-[a-z0-9-]{1,96}\.mp4$ ]]; then
+            echo "Invalid output filename" >&2
+            exit 1
+          fi
+          if (( ${#HTML_BASE64} == 0 || ${#HTML_BASE64} > 60000 )); then
+            echo "Base64 HTML input is empty or exceeds the safe dispatch limit" >&2
+            exit 1
+          fi
+          project_dir="$RUNNER_TEMP/renuvo-hyperframes-project"
+          output_dir="$RUNNER_TEMP/renuvo-hyperframes-output"
+          install -d "$project_dir/vendor" "$output_dir"
+          printf '%s' "$HTML_BASE64" | base64 --decode > "$project_dir/index.html"
+          test -s "$project_dir/index.html"
+          cp node_modules/gsap/dist/gsap.min.js "$project_dir/vendor/gsap.min.js"
+          cp example-project/index.motion.json "$project_dir/index.motion.json"
+          test -s "$project_dir/vendor/gsap.min.js"
+          printf '%s\n' '{"authoringSkill":"hyperframes"}' > "$project_dir/hyperframes.json"
+          output_path="$output_dir/$REQUESTED_FILENAME"
+          printf 'PROJECT_DIR=%s\n' "$project_dir" >> "$GITHUB_ENV"
+          printf 'OUTPUT_FILENAME=%s\n' "$REQUESTED_FILENAME" >> "$GITHUB_ENV"
+          printf 'OUTPUT_PATH=%s\n' "$output_path" >> "$GITHUB_ENV"
+
+      - name: Validate HyperFrames composition
+        run: |
+          set -euo pipefail
+          npx --no-install hyperframes check "$PROJECT_DIR"
+
+      - name: Render 1080x1920 MP4 locally
+        run: |
+          set -euo pipefail
+          npx --no-install hyperframes render "$PROJECT_DIR" \
+            --output "$OUTPUT_PATH" \
+            --fps 30 \
+            --quality high \
+            --strict
+
+      - name: Verify rendered MP4
+        run: |
+          set -euo pipefail
+          test -s "$OUTPUT_PATH"
+          stream_probe="$(ffprobe -v error -select_streams v:0 \
+            -show_entries stream=width,height,avg_frame_rate \
+            -of csv=p=0 "$OUTPUT_PATH")"
+          IFS=',' read -r width height frame_rate <<< "$stream_probe"
+          test "$width" = "1080"
+          test "$height" = "1920"
+          awk -F/ -v rate="$frame_rate" 'BEGIN { split(rate, p, "/"); if (p[2] == 0 || (p[1] / p[2]) < 29.99 || (p[1] / p[2]) > 30.01) exit 1 }'
+          duration="$(ffprobe -v error -show_entries format=duration \
+            -of default=noprint_wrappers=1:nokey=1 "$OUTPUT_PATH")"
+          awk -v duration="$duration" 'BEGIN { if (duration < 36.90 || duration > 37.10) exit 1 }'
+          printf 'Verified %sx%s at %s fps; duration %ss\n' "$width" "$height" "$frame_rate" "$duration"
+
+      - name: Publish rolling release asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          if ! gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release create "$RELEASE_TAG" \
+              --title "Renuvo renders" \
+              --notes "Rolling release for n8n-dispatched HyperFrames renders."
+          fi
+          if gh release view "$RELEASE_TAG" --json assets --jq '.assets[].name' | grep -Fxq "$OUTPUT_FILENAME"; then
+            gh release delete-asset "$RELEASE_TAG" "$OUTPUT_FILENAME" --yes
+          fi
+          gh release upload "$RELEASE_TAG" "$OUTPUT_PATH"
+          gh release view "$RELEASE_TAG" --json assets --jq '.assets[].name' | grep -Fxq "$OUTPUT_FILENAME"
+          printf 'Published %s\n' "https://github.com/$GH_REPO/releases/download/$RELEASE_TAG/$OUTPUT_FILENAME"
+
+      - name: Write render summary
+        if: always()
+        run: |
+          set -euo pipefail
+          {
+            echo "## Renuvo HyperFrames render"
+            echo
+            echo "- Asset: \`${OUTPUT_FILENAME:-not-created}\`"
+            echo "- Release tag: \`$RELEASE_TAG\`"
+            echo "- Renderer: \`hyperframes@0.8.30\` with local \`gsap@3\`"
+          } >> "$GITHUB_STEP_SUMMARY"

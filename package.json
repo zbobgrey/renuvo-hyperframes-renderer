@@ -1,0 +1,16 @@
+{
+  "name": "renuvo-hyperframes-renderer",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Public GitHub Actions renderer for Renuvo HyperFrames workflow-dispatch jobs.",
+  "license": "UNLICENSED",
+  "scripts": {
+    "prepare:example": "node scripts/prepare-example.mjs",
+    "check:example": "npm run prepare:example && hyperframes check example-project",
+    "render:example": "npm run prepare:example && hyperframes render example-project --output renders/renuvo-day-01-local.mp4 --fps 30 --quality high --strict"
+  },
+  "dependencies": {
+    "gsap": "3.13.0",
+    "hyperframes": "0.8.30"
+  }
+}
