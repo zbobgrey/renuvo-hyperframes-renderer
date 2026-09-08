@@ -12,7 +12,8 @@ The renderer accepts these `workflow_dispatch` inputs:
 
 - `html_base64`: a standalone HTML composition, limited by the workflow to 60,000 Base64 characters.
 - `output_filename`: a filename matching `renuvo-[a-z0-9-]{1,96}.mp4`.
-- `narration_text`: the voiceover script; the renderer rejects empty, overlong, or retired copy.
+- `narration_segments_json`: six ordered `{id,text}` scene records. The renderer synthesizes each scene separately with character timestamps and rejects malformed, overlong, or retired copy.
+- `narration_text`: optional combined copy retained only for audit compatibility.
 - `elevenlabs_voice_id`: optional voice override; defaults to the established Renuvo voice `EyRf2vN1QWFKpAubRauZ`.
 
 For compatibility with earlier n8n exports, the dispatcher also accepts
@@ -30,7 +31,7 @@ Jobs are serialized through the `renuvo-renders` concurrency group. Before uploa
 
 Add an encrypted GitHub Actions repository secret named `ELEVENLABS_API_KEY` under **Settings → Secrets and variables → Actions**. The workflow passes it only to the narration process; it is never sent by n8n, written into the HTML, committed, or printed.
 
-The runner calls ElevenLabs' synchronous text-to-speech endpoint with `eleven_multilingual_v2`, the established Renuvo voice settings, and `mp3_44100_128`. It rejects narration longer than 36.5 seconds so the spoken track fits the 37-second composition.
+The runner calls ElevenLabs' timestamped text-to-speech endpoint once per scene with `eleven_multilingual_v2`, the established Renuvo voice settings, and `mp3_44100_128`. It stores six temporary MP3 files plus character and word alignment metadata. `scripts/sync-composition-to-narration.mjs` uses the measured speech spans to assign all six contiguous scene windows and GSAP cue starts, distributes remaining breathing room proportionally, and preserves the exact 37-second composition duration.
 
 The approved ink and ivory SVG lockups live in `assets/brand/`. The original locally synthesized, sample-free review bed lives at `assets/audio/music-bed-60s.wav`. Both are copied into the temporary project before validation; the composition keeps narration dominant and fades the music in and out beneath it.
 
@@ -50,13 +51,18 @@ Replace `GITHUB_TOKEN` in n8n's credential editor with the token value. Do not p
 
 ## Local smoke test
 
-With Node.js 22 or newer, FFmpeg, and `ELEVENLABS_API_KEY` available, generate the local narration first, then render:
+With Node.js 22 or newer, FFmpeg, and `ELEVENLABS_API_KEY` available, generate the local timestamped narration, synchronize the composition, and then render:
 
 ```bash
 npm ci
 npm run prepare:example
-# Set NARRATION_TEXT, ELEVENLABS_VOICE_ID, and NARRATION_OUTPUT=example-project/media/narration.mp3
+# Set NARRATION_SEGMENTS_JSON and ELEVENLABS_VOICE_ID.
+$env:NARRATION_OUTPUT_DIR = 'example-project/media/narration'
+$env:NARRATION_MANIFEST = 'example-project/media/narration-timing.json'
+$env:COMPOSITION_HTML = 'example-project/index.html'
+$env:RENDER_TIMING_OUTPUT = 'example-project/media/render-timing.json'
 node scripts/generate-elevenlabs-narration.mjs
+node scripts/sync-composition-to-narration.mjs
 npm run check:example
 npm run render:example
 ffprobe -v error -show_format renders/renuvo-day-01-local.mp4
@@ -90,7 +96,15 @@ After the push, trigger a smoke render with a unique filename:
 $html = [System.IO.File]::ReadAllText((Resolve-Path '.\example-project\index.html'))
 $htmlBase64 = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($html))
 $output = 'renuvo-day-01-github-smoke-' + [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds() + '.mp4'
-gh workflow run render-hyperframes.yml --repo zbobgrey/renuvo-hyperframes-renderer --ref main -f "html_base64=$htmlBase64" -f "output_filename=$output" -f "narration_text=Your Brand. Built to return. Renuvo makes memberships, credits, and benefits clear. Renuvo. Your Brand. Built to return."
+$segments = @(
+  @{ id = 'scene-01'; text = 'Your Brand. Built to return.' }
+  @{ id = 'scene-02'; text = 'Renuvo gives your business flexible memberships, credits, and benefits, all shaped around the way you serve.' }
+  @{ id = 'scene-03'; text = 'Customers can join, understand their value, and come back with confidence.' }
+  @{ id = 'scene-04'; text = 'Every visit, balance, and benefit stays clear at each touchpoint, so your team is always ready.' }
+  @{ id = 'scene-05'; text = 'The experience still feels like you—your name, your voice, and your customer relationship stay front and center.' }
+  @{ id = 'scene-06'; text = 'Renuvo. Your Brand. Built to return.' }
+) | ConvertTo-Json -Compress
+gh workflow run render-hyperframes.yml --repo zbobgrey/renuvo-hyperframes-renderer --ref main -f "html_base64=$htmlBase64" -f "output_filename=$output" -f "narration_segments_json=$segments"
 gh run watch --repo zbobgrey/renuvo-hyperframes-renderer --exit-status
 ```
 

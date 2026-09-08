@@ -20,7 +20,11 @@ on:
         required: false
         type: string
       narration_text:
-        description: Narration copy synthesized by ElevenLabs on the runner
+        description: Legacy combined narration copy for audit/debugging
+        required: false
+        type: string
+      narration_segments_json:
+        description: Six scene narration segments synthesized with ElevenLabs timestamps
         required: true
         type: string
       elevenlabs_voice_id:
@@ -82,6 +86,7 @@ jobs:
           LEGACY_HTML_BASE64: ${{ inputs.html_b64 }}
           LEGACY_FILENAME: ${{ inputs.output_name }}
           NARRATION_TEXT: ${{ inputs.narration_text }}
+          NARRATION_SEGMENTS_JSON: ${{ inputs.narration_segments_json }}
           ELEVENLABS_VOICE_ID: ${{ inputs.elevenlabs_voice_id }}
         run: |
           set -euo pipefail
@@ -103,12 +108,12 @@ jobs:
             echo "Base64 HTML input is empty or exceeds the safe dispatch limit" >&2
             exit 1
           fi
-          if (( ${#NARRATION_TEXT} == 0 || ${#NARRATION_TEXT} > 1600 )); then
-            echo "Narration text is empty or too long" >&2
+          if (( ${#NARRATION_SEGMENTS_JSON} == 0 || ${#NARRATION_SEGMENTS_JSON} > 4000 )); then
+            echo "Narration segments are empty or too long" >&2
             exit 1
           fi
           retired_copy="Turn regular customers"" into recurring revenue"
-          if [[ "$NARRATION_TEXT" == *"$retired_copy"* ]]; then
+          if [[ "$NARRATION_SEGMENTS_JSON" == *"$retired_copy"* || "$NARRATION_TEXT" == *"$retired_copy"* ]]; then
             echo "Narration contains retired Renuvo marketing copy" >&2
             exit 1
           fi
@@ -138,18 +143,25 @@ jobs:
       - name: Generate ElevenLabs narration
         env:
           ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
-          NARRATION_TEXT: ${{ inputs.narration_text }}
+          NARRATION_SEGMENTS_JSON: ${{ inputs.narration_segments_json }}
           ELEVENLABS_VOICE_ID: ${{ inputs.elevenlabs_voice_id }}
           ELEVENLABS_MODEL_ID: eleven_multilingual_v2
-          NARRATION_OUTPUT: ${{ runner.temp }}/renuvo-hyperframes-project/media/narration.mp3
+          NARRATION_OUTPUT_DIR: ${{ runner.temp }}/renuvo-hyperframes-project/media/narration
+          NARRATION_MANIFEST: ${{ runner.temp }}/renuvo-hyperframes-project/media/narration-timing.json
+          COMPOSITION_HTML: ${{ runner.temp }}/renuvo-hyperframes-project/index.html
+          RENDER_TIMING_OUTPUT: ${{ runner.temp }}/renuvo-hyperframes-project/media/render-timing.json
         run: |
           set -euo pipefail
           node scripts/generate-elevenlabs-narration.mjs
-          test -s "$PROJECT_DIR/media/narration.mp3"
-          narration_duration="$(ffprobe -v error -show_entries format=duration \
-            -of default=noprint_wrappers=1:nokey=1 "$PROJECT_DIR/media/narration.mp3")"
-          awk -v duration="$narration_duration" 'BEGIN { if (duration <= 0 || duration > 36.50) exit 1 }'
-          printf 'Verified ElevenLabs narration duration: %ss\n' "$narration_duration"
+          node scripts/sync-composition-to-narration.mjs
+          test -s "$PROJECT_DIR/media/narration-timing.json"
+          test -s "$PROJECT_DIR/media/render-timing.json"
+          for scene_number in 01 02 03 04 05 06; do
+            narration_file="$PROJECT_DIR/media/narration/scene-$scene_number.mp3"
+            test -s "$narration_file"
+            ffprobe -v error -show_entries format=duration \
+              -of default=noprint_wrappers=1:nokey=1 "$narration_file"
+          done
 
       - name: Validate HyperFrames composition
         run: |

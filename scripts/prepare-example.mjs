@@ -11,7 +11,10 @@ copyFileSync(resolve(root, 'node_modules', 'gsap', 'dist', 'gsap.min.js'), resol
 copyFileSync(resolve(root, 'assets', 'brand', 'renuvo-lockup-horizontal-ivory.svg'), resolve(mediaDir, 'renuvo-lockup-horizontal-ivory.svg'));
 copyFileSync(resolve(root, 'assets', 'brand', 'renuvo-lockup-horizontal-ink.svg'), resolve(mediaDir, 'renuvo-lockup-horizontal-ink.svg'));
 copyFileSync(resolve(root, 'assets', 'audio', 'music-bed-60s.wav'), resolve(mediaDir, 'music-bed-60s.wav'));
-if (!existsSync(resolve(mediaDir, 'narration.mp3'))) {
-  console.warn('example-project/media/narration.mp3 is absent; generate it before a local audio render.');
+const missingNarration = Array.from({ length: 6 }, (_, index) =>
+  resolve(mediaDir, 'narration', `scene-${String(index + 1).padStart(2, '0')}.mp3`),
+).filter((file) => !existsSync(file));
+if (missingNarration.length) {
+  console.warn('Timestamped scene narration is absent; generate and synchronize it before a local audio render.');
 }
 console.log('Prepared vendored GSAP, Renuvo logos, and the original music bed.');
