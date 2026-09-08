@@ -87,6 +87,11 @@ const renderTiming = {
     audioStart,
     speechStart,
     speechEnd,
+    words: (manifest.scenes.find((scene) => scene.id === id)?.words || []).map((word) => ({
+      word: word.word,
+      start: round(audioStart + word.startSeconds),
+      end: round(audioStart + word.endSeconds),
+    })),
   })),
 };
 const timingPattern = /(<script id="renuvo-timing-data">)window\.__RENUVO_TIMING__\s*=\s*[\s\S]*?;<\/script>/;

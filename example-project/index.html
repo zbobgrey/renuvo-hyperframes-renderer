@@ -411,9 +411,9 @@
           <p class="kicker" id="scene-02-kicker">Flexible by design</p>
           <h2 class="headline compact" id="scene-02-headline">Memberships, credits, and benefits—shaped around your business.</h2>
           <div id="scene-02-stack">
-            <article class="offer-card"><strong>Memberships</strong><span>Plans that fit the way you serve</span></article>
-            <article class="offer-card"><strong>Credits</strong><span>Simple value customers understand</span></article>
-            <article class="offer-card"><strong>Benefits</strong><span>Reasons to choose you again</span></article>
+            <article id="offer-memberships" class="offer-card"><strong>Memberships</strong><span>Plans that fit the way you serve</span></article>
+            <article id="offer-credits" class="offer-card"><strong>Credits</strong><span>Simple value customers understand</span></article>
+            <article id="offer-benefits" class="offer-card"><strong>Benefits</strong><span>Reasons to choose you again</span></article>
           </div>
         </div>
       </section>
@@ -442,9 +442,9 @@
           <p class="kicker" id="scene-04-kicker">Clear at every touchpoint</p>
           <h2 class="headline compact" id="scene-04-headline">Benefits stay clear. Teams stay ready.</h2>
           <div id="scene-04-board">
-            <article class="status-card"><span class="status-label"><i class="status-dot"></i>Members</span><strong class="status-value">Ready</strong></article>
-            <article class="status-card"><span class="status-label"><i class="status-dot"></i>Visits</span><strong class="status-value">Visible</strong></article>
-            <article class="status-card wide">
+            <article id="status-members" class="status-card"><span class="status-label"><i class="status-dot"></i>Members</span><strong class="status-value">Ready</strong></article>
+            <article id="status-visits" class="status-card"><span class="status-label"><i class="status-dot"></i>Visits</span><strong class="status-value">Visible</strong></article>
+            <article id="status-benefits" class="status-card wide">
               <span class="status-label"><i class="status-dot"></i>Benefits</span>
               <div class="benefit-lines">
                 <div class="benefit-line"><span>Active</span><i id="benefit-bar-a"></i></div>
@@ -500,6 +500,11 @@
       const timing = window.__RENUVO_TIMING__;
       const sceneAt = (index, offset = 0) => timing.scenes[index].start + offset;
       const speechAt = (index, offset = 0) => timing.scenes[index].speechStart + offset;
+      const normalizeWord = (value) => value.toLowerCase().replace(/[^a-z0-9]+/g, '');
+      const wordAt = (index, target, occurrence = 0, offset = 0) => {
+        const matches = (timing.scenes[index].words || []).filter((entry) => normalizeWord(entry.word) === normalizeWord(target));
+        return (matches[occurrence]?.start ?? timing.scenes[index].speechStart) + offset;
+      };
       const timeline = gsap.timeline({ paused: true });
       timeline.set('#music-bed', { volume: 0 }, 0);
       timeline.to('#music-bed', { volume: .075, duration: 1.2, ease: 'power1.out' }, 0);
@@ -508,7 +513,7 @@
       timeline.addLabel('opening', sceneAt(0));
       timeline.fromTo('#scene-01-topline', { opacity: 0, x: -54 }, { opacity: 1, x: 0, duration: .55, ease: 'power3.out' }, sceneAt(0, .15));
       timeline.fromTo('#scene-01-kicker', { opacity: 0, y: 44 }, { opacity: 1, y: 0, duration: .7, ease: 'expo.out' }, speechAt(0, -.2));
-      timeline.fromTo('#scene-01-headline', { opacity: 0, y: 88 }, { opacity: 1, y: 0, duration: 1, ease: 'power4.out' }, speechAt(0));
+      timeline.fromTo('#scene-01-headline', { opacity: 0, y: 88 }, { opacity: 1, y: 0, duration: 1, ease: 'power4.out' }, wordAt(0, 'Your'));
       timeline.fromTo('#scene-01-rail', { scaleX: 0 }, { scaleX: 1, duration: 1.15, ease: 'power2.inOut' }, speechAt(0, .3));
       timeline.fromTo('#scene-01-orbit', { rotation: 0 }, { rotation: 92, duration: Math.max(.8, timing.scenes[0].duration - .55), ease: 'none' }, sceneAt(0, .25));
 
@@ -516,40 +521,46 @@
       timeline.fromTo('#scene-02-topline', { opacity: 0, x: 56 }, { opacity: 1, x: 0, duration: .45, ease: 'power2.out' }, sceneAt(1, .15));
       timeline.fromTo('#scene-02-kicker', { opacity: 0, y: -34 }, { opacity: 1, y: 0, duration: .42, ease: 'back.out(1.4)' }, speechAt(1, -.18));
       timeline.fromTo('#scene-02-headline', { opacity: 0, x: -72 }, { opacity: 1, x: 0, duration: .72, ease: 'expo.out' }, speechAt(1));
-      timeline.fromTo('#scene-02-stack .offer-card', { opacity: 0, x: 110 }, { opacity: 1, x: 0, duration: .62, stagger: .14, ease: 'power4.out' }, speechAt(1, .42));
+      timeline.fromTo('#offer-memberships', { opacity: 0, x: 110 }, { opacity: 1, x: 0, duration: .62, ease: 'power4.out' }, wordAt(1, 'memberships', 0, -.15));
+      timeline.fromTo('#offer-credits', { opacity: 0, x: 110 }, { opacity: 1, x: 0, duration: .62, ease: 'power4.out' }, wordAt(1, 'credits', 0, -.15));
+      timeline.fromTo('#offer-benefits', { opacity: 0, x: 110 }, { opacity: 1, x: 0, duration: .62, ease: 'power4.out' }, wordAt(1, 'benefits', 0, -.15));
       timeline.fromTo('#scene-02-rail', { scaleX: 0 }, { scaleX: 1, duration: Math.max(.8, timing.scenes[1].duration - .7), ease: 'none' }, sceneAt(1, .25));
 
       timeline.addLabel('loop', sceneAt(2));
       timeline.fromTo('#scene-03-topline', { opacity: 0, y: -36 }, { opacity: 1, y: 0, duration: .46, ease: 'power3.out' }, sceneAt(2, .15));
       timeline.fromTo('#scene-03-headline', { opacity: 0, x: -86 }, { opacity: 1, x: 0, duration: .75, ease: 'expo.out' }, speechAt(2));
       timeline.fromTo('#scene-03-ring', { opacity: 0, scale: .78, rotation: -24 }, { opacity: 1, scale: 1, rotation: 0, duration: 1.05, ease: 'back.out(1.2)' }, speechAt(2, .38));
-      timeline.fromTo('#scene-03-loop .loop-card', { opacity: 0, scale: .7 }, { opacity: 1, scale: 1, duration: .52, stagger: .16, ease: 'power4.out' }, speechAt(2, .72));
+      timeline.fromTo('#loop-card-a', { opacity: 0, scale: .7 }, { opacity: 1, scale: 1, duration: .52, ease: 'power4.out' }, wordAt(2, 'join', 0, -.12));
+      timeline.fromTo('#loop-card-b', { opacity: 0, scale: .7 }, { opacity: 1, scale: 1, duration: .52, ease: 'power4.out' }, wordAt(2, 'back', 0, -.16));
+      timeline.fromTo('#loop-card-c', { opacity: 0, scale: .7 }, { opacity: 1, scale: 1, duration: .52, ease: 'power4.out' }, wordAt(2, 'confidence', 0, -.18));
       timeline.to('#scene-03-ring', { rotation: 82, duration: Math.max(.8, timing.scenes[2].duration - 2), ease: 'none' }, speechAt(2, 1.35));
 
       timeline.addLabel('operations', sceneAt(3));
       timeline.fromTo('#scene-04-topline', { opacity: 0, x: -42 }, { opacity: 1, x: 0, duration: .42, ease: 'power2.out' }, sceneAt(3, .15));
       timeline.fromTo('#scene-04-kicker', { opacity: 0, y: 36 }, { opacity: 1, y: 0, duration: .5, ease: 'back.out(1.3)' }, speechAt(3, -.15));
       timeline.fromTo('#scene-04-headline', { opacity: 0, y: 76 }, { opacity: 1, y: 0, duration: .78, ease: 'power4.out' }, speechAt(3));
-      timeline.fromTo('#scene-04-board .status-card', { opacity: 0, scale: .9 }, { opacity: 1, scale: 1, duration: .58, stagger: .13, ease: 'expo.out' }, speechAt(3, .42));
-      timeline.fromTo('#benefit-bar-a', { scaleX: .14 }, { scaleX: .78, duration: 2.6, ease: 'power2.inOut' }, speechAt(3, 1.05));
-      timeline.fromTo('#benefit-bar-b', { scaleX: .12 }, { scaleX: .94, duration: 3.1, ease: 'sine.inOut' }, speechAt(3, 1.2));
-      timeline.fromTo('#benefit-bar-c', { scaleX: .1 }, { scaleX: .68, duration: 3.45, ease: 'power1.inOut' }, speechAt(3, 1.35));
+      timeline.fromTo('#status-members', { opacity: 0, scale: .9 }, { opacity: 1, scale: 1, duration: .58, ease: 'expo.out' }, speechAt(3, .2));
+      timeline.fromTo('#status-visits', { opacity: 0, scale: .9 }, { opacity: 1, scale: 1, duration: .58, ease: 'expo.out' }, wordAt(3, 'visit', 0, -.12));
+      timeline.fromTo('#status-benefits', { opacity: 0, scale: .9 }, { opacity: 1, scale: 1, duration: .58, ease: 'expo.out' }, wordAt(3, 'benefit', 0, -.12));
+      timeline.fromTo('#benefit-bar-a', { scaleX: .14 }, { scaleX: .78, duration: 1.6, ease: 'power2.inOut' }, wordAt(3, 'clear', 0, -.1));
+      timeline.fromTo('#benefit-bar-b', { scaleX: .12 }, { scaleX: .94, duration: 1.8, ease: 'sine.inOut' }, wordAt(3, 'team', 0, -.1));
+      timeline.fromTo('#benefit-bar-c', { scaleX: .1 }, { scaleX: .68, duration: 1.6, ease: 'power1.inOut' }, wordAt(3, 'ready', 0, -.15));
 
       timeline.addLabel('brand-fit', sceneAt(4));
       timeline.fromTo('#scene-05-topline', { opacity: 0, y: -38 }, { opacity: 1, y: 0, duration: .45, ease: 'power3.out' }, sceneAt(4, .15));
       timeline.fromTo('#scene-05-kicker', { opacity: 0, x: 44 }, { opacity: 1, x: 0, duration: .48, ease: 'back.out(1.35)' }, speechAt(4, -.15));
       timeline.fromTo('#scene-05-headline', { opacity: 0, x: -82 }, { opacity: 1, x: 0, duration: .72, ease: 'expo.out' }, speechAt(4));
-      timeline.fromTo('#brand-panel-a', { x: -120, rotation: -3 }, { x: 0, rotation: 0, duration: .75, ease: 'power4.out' }, speechAt(4, .42));
-      timeline.fromTo('#brand-panel-b', { x: 120, rotation: 3 }, { x: 0, rotation: 0, duration: .75, ease: 'power4.out' }, speechAt(4, .55));
-      timeline.fromTo('#scene-05-join', { opacity: 0, scale: .4, rotation: -90 }, { opacity: 1, scale: 1, rotation: 0, duration: .7, ease: 'back.out(1.8)' }, speechAt(4, 1.05));
+      timeline.fromTo('#brand-panel-a', { x: -120, rotation: -3 }, { x: 0, rotation: 0, duration: .75, ease: 'power4.out' }, wordAt(4, 'voice', 0, -.35));
+      timeline.fromTo('#brand-panel-b', { x: 120, rotation: 3 }, { x: 0, rotation: 0, duration: .75, ease: 'power4.out' }, wordAt(4, 'customer', 0, -.35));
+      timeline.fromTo('#scene-05-join', { opacity: 0, scale: .4, rotation: -90 }, { opacity: 1, scale: 1, rotation: 0, duration: .7, ease: 'back.out(1.8)' }, wordAt(4, 'center', 0, -.3));
       timeline.fromTo('#scene-05-rule', { scaleX: 0 }, { scaleX: 1, duration: Math.max(.8, timing.scenes[4].duration - 1.4), ease: 'power2.inOut' }, speechAt(4, 1.2));
 
       timeline.addLabel('closing', sceneAt(5));
       timeline.fromTo('#scene-06-topline', { opacity: 0, x: 46 }, { opacity: 1, x: 0, duration: .52, ease: 'power3.out' }, sceneAt(5, .15));
       timeline.fromTo('#scene-06-kicker', { opacity: 0, y: -38 }, { opacity: 1, y: 0, duration: .55, ease: 'back.out(1.35)' }, speechAt(5, -.15));
-      timeline.fromTo('#scene-06-headline', { opacity: 0, y: 92 }, { opacity: 1, y: 0, duration: 1.02, ease: 'expo.out' }, speechAt(5));
-      timeline.fromTo('#scene-06-lockup', { opacity: 0, scaleX: .72 }, { opacity: 1, scaleX: 1, duration: .78, ease: 'power4.out' }, speechAt(5, .65));
-      timeline.fromTo('#scene-06-logo', { opacity: 0, y: 34 }, { opacity: 1, y: 0, duration: .7, ease: 'power3.out' }, speechAt(5, 1.2));
+      timeline.fromTo('#scene-06-headline', { opacity: 0, y: 92 }, { opacity: 1, y: 0, duration: 1.02, ease: 'expo.out' }, wordAt(5, 'Your'));
+      timeline.fromTo('#scene-06-lockup', { opacity: 0, scaleX: .72 }, { opacity: 1, scaleX: 1, duration: .78, ease: 'power4.out' }, wordAt(5, 'Built', 0, -.12));
+      timeline.fromTo('#scene-06-logo', { opacity: 0, y: 34 }, { opacity: 1, y: 0, duration: .7, ease: 'power3.out' }, speechAt(5));
       timeline.fromTo('#scene-06-orbit', { rotation: 0 }, { rotation: 112, duration: Math.max(.8, timing.scenes[5].duration - .55), ease: 'none' }, sceneAt(5, .25));
 
       window.__timelines['renuvo-day-01'] = timeline;

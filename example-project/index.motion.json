@@ -4,32 +4,32 @@
     {
       "kind": "appearsBy",
       "selector": "#scene-01-headline",
-      "bySec": 1.8
+      "bySec": 1.573
     },
     {
       "kind": "appearsBy",
       "selector": "#scene-02-headline",
-      "bySec": 7.7
+      "bySec": 5.28
     },
     {
       "kind": "appearsBy",
       "selector": "#scene-03-headline",
-      "bySec": 13.5
+      "bySec": 13.35
     },
     {
       "kind": "appearsBy",
       "selector": "#scene-04-headline",
-      "bySec": 19.5
+      "bySec": 19.508
     },
     {
       "kind": "appearsBy",
       "selector": "#scene-05-headline",
-      "bySec": 25.5
+      "bySec": 27.035
     },
     {
       "kind": "appearsBy",
       "selector": "#scene-06-headline",
-      "bySec": 32
+      "bySec": 34.811
     },
     {
       "kind": "before",
