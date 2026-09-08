@@ -1,6 +1,6 @@
 # Renuvo HyperFrames renderer
 
-This public repository turns Base64-encoded HyperFrames HTML into a narrated, music-backed 1080×1920, 30-fps MP4 on a standard GitHub-hosted Ubuntu runner. It uses `hyperframes@0.8.30`, installs `gsap@3`, copies GSAP and approved Renuvo media into the temporary project, creates narration with ElevenLabs, runs the local HyperFrames validator and renderer, verifies video and audio with `ffprobe`, and publishes the MP4 on the rolling `renuvo-renders` release.
+This public repository turns Base64-encoded HyperFrames HTML into a narrated, music-backed 1080×1920, 30-fps MP4 on a standard GitHub-hosted Ubuntu runner. It uses `hyperframes@0.8.30`, installs `gsap@3`, copies GSAP and approved Renuvo media into the temporary project, restores or creates narration with ElevenLabs timestamp data, runs the local HyperFrames validator and renderer, verifies video and audio with `ffprobe`, and publishes the MP4 on the rolling `renuvo-renders` release.
 
 No HeyGen key, hosted rendering service, customer data, or private media belongs in this repository.
 
@@ -15,6 +15,8 @@ The renderer accepts these `workflow_dispatch` inputs:
 - `narration_segments_json`: six ordered `{id,text}` scene records. The renderer synthesizes each scene separately with character timestamps and rejects malformed, overlong, or retired copy.
 - `narration_text`: optional combined copy retained only for audit compatibility.
 - `elevenlabs_voice_id`: optional voice override; defaults to the established Renuvo voice `EyRf2vN1QWFKpAubRauZ`.
+- `narration_mode`: `auto` restores an exact cache hit or generates and caches a take on a miss; `reuse` fails on a miss and never calls ElevenLabs.
+- `narration_cache_version`: defaults to `v1`; change it to request a new cache identity for otherwise unchanged narration inputs.
 
 For compatibility with earlier n8n exports, the dispatcher also accepts
 `html_b64` and `output_name` as aliases. Do not send both forms with different
@@ -31,7 +33,9 @@ Jobs are serialized through the `renuvo-renders` concurrency group. Before uploa
 
 Add an encrypted GitHub Actions repository secret named `ELEVENLABS_API_KEY` under **Settings → Secrets and variables → Actions**. The workflow passes it only to the narration process; it is never sent by n8n, written into the HTML, committed, or printed.
 
-The runner calls ElevenLabs' timestamped text-to-speech endpoint once per scene with `eleven_multilingual_v2`, the established Renuvo voice settings, and `mp3_44100_128`. It stores six temporary MP3 files plus character and word alignment metadata. `scripts/sync-composition-to-narration.mjs` uses the measured speech spans to assign all six contiguous scene windows, converts word offsets to absolute composition timestamps, and lets GSAP reveal semantic elements when words such as memberships, credits, benefits, customer, and return are spoken. Remaining breathing room is distributed proportionally while preserving the exact 37-second composition duration.
+On an exact cache miss in `auto` mode, the runner calls ElevenLabs' timestamped text-to-speech endpoint once per scene with `eleven_multilingual_v2`, the established Renuvo voice settings, and `mp3_44100_128`. It stores six MP3 files plus character and word alignment metadata in the GitHub Actions cache. The deterministic cache identity includes the normalized script, voice, model, generator implementation, and `narration_cache_version`. Visual-only HTML edits do not change this identity.
+
+On a cache hit, the runner restores those six files and the timestamp manifest without exposing or calling the ElevenLabs API. `reuse` mode makes that behavior strict: a missing or expired cache stops the job before generation. `scripts/validate-narration-cache.mjs` verifies the restored voice, model, exact scene text, clip files, speech windows, and monotonic word timestamps before `scripts/sync-composition-to-narration.mjs` assigns all six contiguous scene windows and absolute GSAP word cues. Remaining breathing room is distributed proportionally while preserving the exact 37-second composition duration.
 
 The approved ink and ivory SVG lockups live in `assets/brand/`. The original locally synthesized, sample-free review bed lives at `assets/audio/music-bed-60s.wav`. Both are copied into the temporary project before validation; the composition keeps narration dominant and fades the music in and out beneath it.
 
@@ -104,8 +108,13 @@ $segments = @(
   @{ id = 'scene-05'; text = 'The experience still feels like you—your name, your voice, and your customer relationship stay front and center.' }
   @{ id = 'scene-06'; text = 'Renuvo. Your Brand. Built to return.' }
 ) | ConvertTo-Json -Compress
-gh workflow run render-hyperframes.yml --repo zbobgrey/renuvo-hyperframes-renderer --ref main -f "html_base64=$htmlBase64" -f "output_filename=$output" -f "narration_segments_json=$segments"
+gh workflow run render-hyperframes.yml --repo zbobgrey/renuvo-hyperframes-renderer --ref main -f "html_base64=$htmlBase64" -f "output_filename=$output" -f "narration_segments_json=$segments" -f "narration_mode=auto" -f "narration_cache_version=v1"
 gh run watch --repo zbobgrey/renuvo-hyperframes-renderer --exit-status
 ```
+
+After that first `auto` run has populated the exact cache, use
+`-f "narration_mode=reuse"` for guaranteed visual-only renders. If the script,
+voice, model, generator, or cache version changes, run `auto` once to populate
+the new identity.
 
 The completed asset will be available at `https://github.com/zbobgrey/renuvo-hyperframes-renderer/releases/download/renuvo-renders/$output`.

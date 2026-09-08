@@ -32,6 +32,19 @@ on:
         required: false
         default: EyRf2vN1QWFKpAubRauZ
         type: string
+      narration_mode:
+        description: Auto reuses an exact cached take or generates it once; reuse never calls ElevenLabs
+        required: false
+        default: auto
+        type: choice
+        options:
+          - auto
+          - reuse
+      narration_cache_version:
+        description: Change this value only when you want a new take for unchanged copy and voice settings
+        required: false
+        default: v1
+        type: string
 
 permissions:
   contents: write
@@ -88,6 +101,9 @@ jobs:
           NARRATION_TEXT: ${{ inputs.narration_text }}
           NARRATION_SEGMENTS_JSON: ${{ inputs.narration_segments_json }}
           ELEVENLABS_VOICE_ID: ${{ inputs.elevenlabs_voice_id }}
+          ELEVENLABS_MODEL_ID: eleven_multilingual_v2
+          NARRATION_MODE: ${{ inputs.narration_mode }}
+          NARRATION_CACHE_VERSION: ${{ inputs.narration_cache_version }}
         run: |
           set -euo pipefail
           if [[ -n "$CURRENT_HTML_BASE64" && -n "$LEGACY_HTML_BASE64" && "$CURRENT_HTML_BASE64" != "$LEGACY_HTML_BASE64" ]]; then
@@ -121,6 +137,14 @@ jobs:
             echo "Invalid ElevenLabs voice ID" >&2
             exit 1
           fi
+          if [[ "$NARRATION_MODE" != "auto" && "$NARRATION_MODE" != "reuse" ]]; then
+            echo "Narration mode must be auto or reuse" >&2
+            exit 1
+          fi
+          if [[ ! "$NARRATION_CACHE_VERSION" =~ ^[A-Za-z0-9._-]{1,40}$ ]]; then
+            echo "Invalid narration cache version" >&2
+            exit 1
+          fi
           project_dir="$RUNNER_TEMP/renuvo-hyperframes-project"
           output_dir="$RUNNER_TEMP/renuvo-hyperframes-output"
           install -d "$project_dir/vendor" "$project_dir/media" "$output_dir"
@@ -136,13 +160,49 @@ jobs:
           test -s "$project_dir/media/music-bed-60s.wav"
           printf '%s\n' '{"authoringSkill":"hyperframes"}' > "$project_dir/hyperframes.json"
           output_path="$output_dir/$REQUESTED_FILENAME"
+          narration_cache_key="$(node scripts/compute-narration-cache-key.mjs)"
+          if [[ ! "$narration_cache_key" =~ ^renuvo-narration-v1-[a-f0-9]{64}$ ]]; then
+            echo "Invalid computed narration cache key" >&2
+            exit 1
+          fi
           printf 'PROJECT_DIR=%s\n' "$project_dir" >> "$GITHUB_ENV"
           printf 'OUTPUT_FILENAME=%s\n' "$REQUESTED_FILENAME" >> "$GITHUB_ENV"
           printf 'OUTPUT_PATH=%s\n' "$output_path" >> "$GITHUB_ENV"
+          printf 'NARRATION_CACHE_KEY=%s\n' "$narration_cache_key" >> "$GITHUB_ENV"
+          printf 'NARRATION_MODE=%s\n' "$NARRATION_MODE" >> "$GITHUB_ENV"
 
-      - name: Generate ElevenLabs narration
+      - name: Restore exact narration and timestamp cache
+        id: narration-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ${{ runner.temp }}/renuvo-hyperframes-project/media/narration
+            ${{ runner.temp }}/renuvo-hyperframes-project/media/narration-timing.json
+          key: ${{ env.NARRATION_CACHE_KEY }}
+
+      - name: Require an existing narration cache in reuse mode
+        if: inputs.narration_mode == 'reuse' && steps.narration-cache.outputs.cache-hit != 'true'
+        run: |
+          set -euo pipefail
+          echo "No exact narration cache exists for this script, voice, model, settings, and cache version." >&2
+          echo "Run once with narration_mode=auto to create it, then use reuse for visual-only renders." >&2
+          exit 1
+
+      - name: Generate ElevenLabs narration on cache miss
+        if: inputs.narration_mode == 'auto' && steps.narration-cache.outputs.cache-hit != 'true'
         env:
           ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+          NARRATION_SEGMENTS_JSON: ${{ inputs.narration_segments_json }}
+          ELEVENLABS_VOICE_ID: ${{ inputs.elevenlabs_voice_id }}
+          ELEVENLABS_MODEL_ID: eleven_multilingual_v2
+          NARRATION_OUTPUT_DIR: ${{ runner.temp }}/renuvo-hyperframes-project/media/narration
+          NARRATION_MANIFEST: ${{ runner.temp }}/renuvo-hyperframes-project/media/narration-timing.json
+        run: |
+          set -euo pipefail
+          node scripts/generate-elevenlabs-narration.mjs
+
+      - name: Validate narration media and synchronize composition
+        env:
           NARRATION_SEGMENTS_JSON: ${{ inputs.narration_segments_json }}
           ELEVENLABS_VOICE_ID: ${{ inputs.elevenlabs_voice_id }}
           ELEVENLABS_MODEL_ID: eleven_multilingual_v2
@@ -152,7 +212,7 @@ jobs:
           RENDER_TIMING_OUTPUT: ${{ runner.temp }}/renuvo-hyperframes-project/media/render-timing.json
         run: |
           set -euo pipefail
-          node scripts/generate-elevenlabs-narration.mjs
+          node scripts/validate-narration-cache.mjs
           node scripts/sync-composition-to-narration.mjs
           test -s "$PROJECT_DIR/media/narration-timing.json"
           test -s "$PROJECT_DIR/media/render-timing.json"
@@ -162,6 +222,15 @@ jobs:
             ffprobe -v error -show_entries format=duration \
               -of default=noprint_wrappers=1:nokey=1 "$narration_file"
           done
+
+      - name: Save newly generated narration and timestamps
+        if: inputs.narration_mode == 'auto' && steps.narration-cache.outputs.cache-hit != 'true' && success()
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            ${{ runner.temp }}/renuvo-hyperframes-project/media/narration
+            ${{ runner.temp }}/renuvo-hyperframes-project/media/narration-timing.json
+          key: ${{ env.NARRATION_CACHE_KEY }}
 
       - name: Validate HyperFrames composition
         run: |
@@ -216,6 +285,8 @@ jobs:
 
       - name: Write render summary
         if: always()
+        env:
+          NARRATION_CACHE_HIT: ${{ steps.narration-cache.outputs.cache-hit }}
         run: |
           set -euo pipefail
           {
@@ -225,4 +296,5 @@ jobs:
             echo "- Release tag: \`$RELEASE_TAG\`"
             echo "- Renderer: \`hyperframes@0.8.30\` with local \`gsap@3\`"
             echo "- Audio: ElevenLabs narration plus original Renuvo music bed"
+            echo "- Narration mode: \`${NARRATION_MODE:-unknown}\`; exact cache hit: \`${NARRATION_CACHE_HIT:-false}\`"
           } >> "$GITHUB_STEP_SUMMARY"
