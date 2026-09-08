@@ -79,7 +79,7 @@ jobs:
       - name: Validate HyperFrames composition
         run: |
           set -euo pipefail
-          npx --no-install hyperframes check "$PROJECT_DIR"
+          npx --no-install hyperframes check "$PROJECT_DIR" --strict
 
       - name: Render 1080x1920 MP4 locally
         run: |
@@ -88,7 +88,7 @@ jobs:
             --output "$OUTPUT_PATH" \
             --fps 30 \
             --quality high \
-            --strict
+            --strict-all
 
       - name: Verify rendered MP4
         run: |
