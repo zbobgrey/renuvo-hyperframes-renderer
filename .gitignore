@@ -1,5 +1,6 @@
 node_modules/
 example-project/vendor/
+example-project/media/
 renders/
 .hyperframes/
 snapshots/

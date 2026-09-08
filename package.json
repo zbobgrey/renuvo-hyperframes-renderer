@@ -7,7 +7,7 @@
   "scripts": {
     "prepare:example": "node scripts/prepare-example.mjs",
     "check:example": "npm run prepare:example && hyperframes check example-project --strict",
-    "render:example": "npm run prepare:example && hyperframes render example-project --output renders/renuvo-day-01-local.mp4 --fps 30 --quality high --strict-all"
+    "render:example": "npm run prepare:example && hyperframes render example-project --output renders/renuvo-day-01-local.mp4 --fps 30 --quality high --strict"
   },
   "dependencies": {
     "gsap": "3.13.0",

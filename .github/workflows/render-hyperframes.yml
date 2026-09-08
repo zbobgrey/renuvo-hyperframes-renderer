@@ -19,6 +19,15 @@ on:
         description: Legacy alias for output_filename
         required: false
         type: string
+      narration_text:
+        description: Narration copy synthesized by ElevenLabs on the runner
+        required: true
+        type: string
+      elevenlabs_voice_id:
+        description: ElevenLabs voice ID (uses the established Renuvo voice by default)
+        required: false
+        default: EyRf2vN1QWFKpAubRauZ
+        type: string
 
 permissions:
   contents: write
@@ -72,6 +81,8 @@ jobs:
           CURRENT_FILENAME: ${{ inputs.output_filename }}
           LEGACY_HTML_BASE64: ${{ inputs.html_b64 }}
           LEGACY_FILENAME: ${{ inputs.output_name }}
+          NARRATION_TEXT: ${{ inputs.narration_text }}
+          ELEVENLABS_VOICE_ID: ${{ inputs.elevenlabs_voice_id }}
         run: |
           set -euo pipefail
           if [[ -n "$CURRENT_HTML_BASE64" && -n "$LEGACY_HTML_BASE64" && "$CURRENT_HTML_BASE64" != "$LEGACY_HTML_BASE64" ]]; then
@@ -92,18 +103,53 @@ jobs:
             echo "Base64 HTML input is empty or exceeds the safe dispatch limit" >&2
             exit 1
           fi
+          if (( ${#NARRATION_TEXT} == 0 || ${#NARRATION_TEXT} > 1600 )); then
+            echo "Narration text is empty or too long" >&2
+            exit 1
+          fi
+          retired_copy="Turn regular customers"" into recurring revenue"
+          if [[ "$NARRATION_TEXT" == *"$retired_copy"* ]]; then
+            echo "Narration contains retired Renuvo marketing copy" >&2
+            exit 1
+          fi
+          if [[ ! "$ELEVENLABS_VOICE_ID" =~ ^[A-Za-z0-9_-]{8,64}$ ]]; then
+            echo "Invalid ElevenLabs voice ID" >&2
+            exit 1
+          fi
           project_dir="$RUNNER_TEMP/renuvo-hyperframes-project"
           output_dir="$RUNNER_TEMP/renuvo-hyperframes-output"
-          install -d "$project_dir/vendor" "$output_dir"
+          install -d "$project_dir/vendor" "$project_dir/media" "$output_dir"
           printf '%s' "$HTML_BASE64" | base64 --decode > "$project_dir/index.html"
           test -s "$project_dir/index.html"
           cp node_modules/gsap/dist/gsap.min.js "$project_dir/vendor/gsap.min.js"
+          cp assets/brand/renuvo-lockup-horizontal-ivory.svg "$project_dir/media/renuvo-lockup-horizontal-ivory.svg"
+          cp assets/brand/renuvo-lockup-horizontal-ink.svg "$project_dir/media/renuvo-lockup-horizontal-ink.svg"
+          cp assets/audio/music-bed-60s.wav "$project_dir/media/music-bed-60s.wav"
           test -s "$project_dir/vendor/gsap.min.js"
+          test -s "$project_dir/media/renuvo-lockup-horizontal-ivory.svg"
+          test -s "$project_dir/media/renuvo-lockup-horizontal-ink.svg"
+          test -s "$project_dir/media/music-bed-60s.wav"
           printf '%s\n' '{"authoringSkill":"hyperframes"}' > "$project_dir/hyperframes.json"
           output_path="$output_dir/$REQUESTED_FILENAME"
           printf 'PROJECT_DIR=%s\n' "$project_dir" >> "$GITHUB_ENV"
           printf 'OUTPUT_FILENAME=%s\n' "$REQUESTED_FILENAME" >> "$GITHUB_ENV"
           printf 'OUTPUT_PATH=%s\n' "$output_path" >> "$GITHUB_ENV"
+
+      - name: Generate ElevenLabs narration
+        env:
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+          NARRATION_TEXT: ${{ inputs.narration_text }}
+          ELEVENLABS_VOICE_ID: ${{ inputs.elevenlabs_voice_id }}
+          ELEVENLABS_MODEL_ID: eleven_multilingual_v2
+          NARRATION_OUTPUT: ${{ runner.temp }}/renuvo-hyperframes-project/media/narration.mp3
+        run: |
+          set -euo pipefail
+          node scripts/generate-elevenlabs-narration.mjs
+          test -s "$PROJECT_DIR/media/narration.mp3"
+          narration_duration="$(ffprobe -v error -show_entries format=duration \
+            -of default=noprint_wrappers=1:nokey=1 "$PROJECT_DIR/media/narration.mp3")"
+          awk -v duration="$narration_duration" 'BEGIN { if (duration <= 0 || duration > 36.50) exit 1 }'
+          printf 'Verified ElevenLabs narration duration: %ss\n' "$narration_duration"
 
       - name: Validate HyperFrames composition
         run: |
@@ -133,7 +179,10 @@ jobs:
           duration="$(ffprobe -v error -show_entries format=duration \
             -of default=noprint_wrappers=1:nokey=1 "$OUTPUT_PATH")"
           awk -v duration="$duration" 'BEGIN { if (duration < 36.90 || duration > 37.10) exit 1 }'
-          printf 'Verified %sx%s at %s fps; duration %ss\n' "$width" "$height" "$frame_rate" "$duration"
+          audio_streams="$(ffprobe -v error -select_streams a \
+            -show_entries stream=index -of csv=p=0 "$OUTPUT_PATH" | wc -l | tr -d ' ')"
+          test "$audio_streams" -ge 1
+          printf 'Verified %sx%s at %s fps; duration %ss; audio streams %s\n' "$width" "$height" "$frame_rate" "$duration" "$audio_streams"
 
       - name: Publish rolling release asset
         env:
@@ -163,4 +212,5 @@ jobs:
             echo "- Asset: \`${OUTPUT_FILENAME:-not-created}\`"
             echo "- Release tag: \`$RELEASE_TAG\`"
             echo "- Renderer: \`hyperframes@0.8.30\` with local \`gsap@3\`"
+            echo "- Audio: ElevenLabs narration plus original Renuvo music bed"
           } >> "$GITHUB_STEP_SUMMARY"

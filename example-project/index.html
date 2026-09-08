@@ -70,16 +70,17 @@
       .brand {
         display: flex;
         align-items: center;
-        gap: 16px;
       }
-      .mark {
+      .brand-logo {
         display: block;
-        width: 28px;
-        height: 28px;
-        border-radius: 50%;
-        background: var(--ember);
-        box-shadow: 0 0 0 9px rgba(208, 107, 46, .18);
+        width: 190px;
+        height: 51px;
+        background-position: left center;
+        background-repeat: no-repeat;
+        background-size: contain;
       }
+      .brand-logo-ivory { background-image: url('media/renuvo-lockup-horizontal-ivory.svg'); }
+      .brand-logo-ink { background-image: url('media/renuvo-lockup-horizontal-ink.svg'); }
       .frame-index { color: var(--graphite); }
       .scene-light .frame-index { color: var(--slate); }
       .kicker {
@@ -361,6 +362,14 @@
         letter-spacing: .16em;
         text-transform: uppercase;
       }
+      #scene-06-logo {
+        position: relative;
+        z-index: 4;
+        display: block;
+        width: 430px;
+        height: auto;
+        margin-top: 66px;
+      }
       #scene-06-orbit { right: -250px; top: 260px; width: 620px; height: 620px; }
       #scene-06-ghost {
         position: absolute;
@@ -387,7 +396,7 @@
           <div class="grid" data-layout-ignore></div>
           <div id="scene-01-orbit" class="orbital" data-layout-ignore></div>
           <div id="scene-01-ghost" data-layout-ignore>R</div>
-          <div class="topline" id="scene-01-topline"><span class="brand"><i class="mark"></i>Renuvo</span><span class="frame-index">01 / 06</span></div>
+          <div class="topline" id="scene-01-topline"><span class="brand" aria-label="Renuvo"><span class="brand-logo brand-logo-ivory"></span></span><span class="frame-index">01 / 06</span></div>
           <p class="kicker" id="scene-01-kicker">A better return starts here</p>
           <h1 class="headline" id="scene-01-headline">Your Brand. Built to return.</h1>
           <div id="scene-01-rail" class="rail" data-layout-ignore></div>
@@ -398,7 +407,7 @@
         <div class="scene-frame">
           <div class="grid" data-layout-ignore></div>
           <div id="scene-02-rail" class="rail" data-layout-ignore></div>
-          <div class="topline" id="scene-02-topline"><span class="brand"><i class="mark"></i>Renuvo</span><span class="frame-index">02 / 06</span></div>
+          <div class="topline" id="scene-02-topline"><span class="brand" aria-label="Renuvo"><span class="brand-logo brand-logo-ink"></span></span><span class="frame-index">02 / 06</span></div>
           <p class="kicker" id="scene-02-kicker">Flexible by design</p>
           <h2 class="headline compact" id="scene-02-headline">Memberships, credits, and benefits—shaped around your business.</h2>
           <div id="scene-02-stack">
@@ -412,7 +421,7 @@
       <section id="scene-03" class="clip scene-dark" data-start="12" data-duration="6" data-track-index="3">
         <div class="scene-frame">
           <div class="grid" data-layout-ignore></div>
-          <div class="topline" id="scene-03-topline"><span class="brand"><i class="mark"></i>Renuvo</span><span class="frame-index">03 / 06</span></div>
+          <div class="topline" id="scene-03-topline"><span class="brand" aria-label="Renuvo"><span class="brand-logo brand-logo-ivory"></span></span><span class="frame-index">03 / 06</span></div>
           <div id="scene-03-copy">
             <p class="kicker">The return loop</p>
             <h2 class="headline compact" id="scene-03-headline">Every visit becomes a reason to come back.</h2>
@@ -429,7 +438,7 @@
       <section id="scene-04" class="clip scene-slate" data-start="18" data-duration="6" data-track-index="4">
         <div class="scene-frame">
           <div class="grid" data-layout-ignore></div>
-          <div class="topline" id="scene-04-topline"><span class="brand"><i class="mark"></i>Renuvo</span><span class="frame-index">04 / 06</span></div>
+          <div class="topline" id="scene-04-topline"><span class="brand" aria-label="Renuvo"><span class="brand-logo brand-logo-ivory"></span></span><span class="frame-index">04 / 06</span></div>
           <p class="kicker" id="scene-04-kicker">Clear at every touchpoint</p>
           <h2 class="headline compact" id="scene-04-headline">Benefits stay clear. Teams stay ready.</h2>
           <div id="scene-04-board">
@@ -450,7 +459,7 @@
       <section id="scene-05" class="clip scene-light" data-start="24" data-duration="6" data-track-index="5">
         <div class="scene-frame">
           <div class="grid" data-layout-ignore></div>
-          <div class="topline" id="scene-05-topline"><span class="brand"><i class="mark"></i>Renuvo</span><span class="frame-index">05 / 06</span></div>
+          <div class="topline" id="scene-05-topline"><span class="brand" aria-label="Renuvo"><span class="brand-logo brand-logo-ink"></span></span><span class="frame-index">05 / 06</span></div>
           <p class="kicker" id="scene-05-kicker">Yours in every detail</p>
           <h2 class="headline compact" id="scene-05-headline">Built for your brand. Ready for the counter.</h2>
           <div id="scene-05-stage">
@@ -467,16 +476,23 @@
           <div class="grid" data-layout-ignore></div>
           <div id="scene-06-orbit" class="orbital" data-layout-ignore></div>
           <div id="scene-06-ghost" data-layout-ignore>R</div>
-          <div class="topline" id="scene-06-topline"><span class="brand"><i class="mark"></i>Renuvo</span><span class="frame-index">06 / 06</span></div>
+          <div class="topline" id="scene-06-topline"><span class="brand" aria-label="Renuvo"><span class="brand-logo brand-logo-ivory"></span></span><span class="frame-index">06 / 06</span></div>
           <p class="kicker" id="scene-06-kicker">Renuvo</p>
           <h2 class="headline" id="scene-06-headline">Your Brand. Built to return.</h2>
           <p id="scene-06-lockup">Membership infrastructure for businesses that value the return.</p>
+          <img id="scene-06-logo" src="media/renuvo-lockup-horizontal-ivory.svg" alt="Renuvo" />
         </div>
       </section>
+      <hf-audio-group id="voiceover" data-label="ElevenLabs narration" data-volume="1"></hf-audio-group>
+      <audio id="narration" src="media/narration.mp3" data-start="0.25" data-track-index="20" data-audio-group="voiceover" data-volume="1"></audio>
+      <audio id="music-bed" src="media/music-bed-60s.wav" data-start="0" data-duration="37" data-track-index="21" data-volume="1"></audio>
     </main>
 
     <script>
       const timeline = gsap.timeline({ paused: true });
+      timeline.set('#music-bed', { volume: 0 }, 0);
+      timeline.to('#music-bed', { volume: .075, duration: 1.2, ease: 'power1.out' }, 0);
+      timeline.to('#music-bed', { volume: 0, duration: 1.5, ease: 'power1.in' }, 35.5);
 
       timeline.addLabel('opening', 0);
       timeline.fromTo('#scene-01-topline', { opacity: 0, x: -54 }, { opacity: 1, x: 0, duration: .55, ease: 'power3.out' }, .2);
@@ -522,6 +538,7 @@
       timeline.fromTo('#scene-06-kicker', { opacity: 0, y: -38 }, { opacity: 1, y: 0, duration: .55, ease: 'back.out(1.35)' }, 30.45);
       timeline.fromTo('#scene-06-headline', { opacity: 0, y: 92 }, { opacity: 1, y: 0, duration: 1.02, ease: 'expo.out' }, 30.68);
       timeline.fromTo('#scene-06-lockup', { opacity: 0, scaleX: .72 }, { opacity: 1, scaleX: 1, duration: .78, ease: 'power4.out' }, 31.42);
+      timeline.fromTo('#scene-06-logo', { opacity: 0, y: 34 }, { opacity: 1, y: 0, duration: .7, ease: 'power3.out' }, 32.05);
       timeline.fromTo('#scene-06-orbit', { rotation: 0 }, { rotation: 112, duration: 6.4, ease: 'none' }, 30.3);
 
       window.__timelines['renuvo-day-01'] = timeline;
