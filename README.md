@@ -13,6 +13,10 @@ The renderer accepts two `workflow_dispatch` inputs:
 - `html_base64`: a standalone HTML composition, limited by the workflow to 60,000 Base64 characters.
 - `output_filename`: a filename matching `renuvo-[a-z0-9-]{1,96}.mp4`.
 
+For compatibility with earlier n8n exports, the dispatcher also accepts
+`html_b64` and `output_name` as aliases. Do not send both forms with different
+values; the renderer rejects conflicting inputs.
+
 Jobs are serialized through the `renuvo-renders` concurrency group. Before upload, the workflow removes an existing asset with the same name, which makes retries idempotent and prevents rolling-release collisions.
 
 ## n8n credential

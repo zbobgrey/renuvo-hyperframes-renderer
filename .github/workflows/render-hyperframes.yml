@@ -5,11 +5,19 @@ on:
     inputs:
       html_base64:
         description: Base64-encoded standalone HyperFrames HTML
-        required: true
+        required: false
         type: string
       output_filename:
         description: Validated MP4 asset filename
-        required: true
+        required: false
+        type: string
+      html_b64:
+        description: Legacy alias for html_base64
+        required: false
+        type: string
+      output_name:
+        description: Legacy alias for output_filename
+        required: false
         type: string
 
 permissions:
@@ -60,10 +68,22 @@ jobs:
 
       - name: Validate inputs and decode temporary project
         env:
-          HTML_BASE64: ${{ inputs.html_base64 }}
-          REQUESTED_FILENAME: ${{ inputs.output_filename }}
+          CURRENT_HTML_BASE64: ${{ inputs.html_base64 }}
+          CURRENT_FILENAME: ${{ inputs.output_filename }}
+          LEGACY_HTML_BASE64: ${{ inputs.html_b64 }}
+          LEGACY_FILENAME: ${{ inputs.output_name }}
         run: |
           set -euo pipefail
+          if [[ -n "$CURRENT_HTML_BASE64" && -n "$LEGACY_HTML_BASE64" && "$CURRENT_HTML_BASE64" != "$LEGACY_HTML_BASE64" ]]; then
+            echo "Conflicting HTML inputs were provided" >&2
+            exit 1
+          fi
+          if [[ -n "$CURRENT_FILENAME" && -n "$LEGACY_FILENAME" && "$CURRENT_FILENAME" != "$LEGACY_FILENAME" ]]; then
+            echo "Conflicting filename inputs were provided" >&2
+            exit 1
+          fi
+          HTML_BASE64="${CURRENT_HTML_BASE64:-$LEGACY_HTML_BASE64}"
+          REQUESTED_FILENAME="${CURRENT_FILENAME:-$LEGACY_FILENAME}"
           if [[ ! "$REQUESTED_FILENAME" =~ ^renuvo-[a-z0-9-]{1,96}\.mp4$ ]]; then
             echo "Invalid output filename" >&2
             exit 1
